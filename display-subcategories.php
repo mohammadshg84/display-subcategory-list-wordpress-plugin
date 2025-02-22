@@ -46,8 +46,7 @@ function display_subcategories_shortcode($atts) {
             
             $output .= '<div class="subcategory-content">';
             $output .= '<h3><a href="' . get_category_link($subcategory->term_id) . '">';
-            $output .= esc_html($subcategory->name);
-            $output .= '</a> (' . $subcategory->count . ')</h3>';
+            $output .= esc_html($subcategory->name).'</a></h3>';
             
             // اضافه کردن توضیحات دسته‌بندی
             if (!empty($subcategory->description)) {
