@@ -2,7 +2,7 @@
 /*
 Plugin Name: نمایش زیرمجموعه‌های دسته‌بندی
 Description: نمایش لیست زیرمجموعه‌های یک دسته‌بندی خاص در برگه با شورت‌کات
-Version: 1.0
+Version: 1.1
 Author: محمدصادق حسن‌پور
 Author URI: https://hspr.ir
 License: GPL2
@@ -18,27 +18,50 @@ function display_subcategories_shortcode($atts) {
     // دریافت زیرمجموعه‌ها
     $subcategories = get_categories(array(
         'parent' => intval($atts['parent_id']),
-        'hide_empty' => false, // نمایش دسته‌بندی‌های خالی هم انجام بشه
+        'hide_empty' => false,
         'orderby' => 'name',
         'order' => 'ASC'
     ));
 
     // ساخت خروجی HTML
-    $output = '<ul class="subcategories-list">';
+    $output = '<div class="subcategories-container">';
     
     if (!empty($subcategories)) {
         foreach ($subcategories as $subcategory) {
-            $output .= '<li>';
-            $output .= '<a href="' . get_category_link($subcategory->term_id) . '">';
+            $output .= '<div class="subcategory-item">';
+            
+            // دریافت تصویر شاخص (فرض بر استفاده از تابع سفارشی یا افزونه)
+            $category_image = '';
+            if (function_exists('get_field')) { // پشتیبانی از ACF
+                $category_image = get_field('category_image', 'category_' . $subcategory->term_id);
+            } elseif (function_exists('z_taxonomy_image_url')) { // پشتیبانی از افزونه Category Featured Image
+                $category_image = z_taxonomy_image_url($subcategory->term_id);
+            }
+            
+            if ($category_image) {
+                $output .= '<div class="subcategory-image">';
+                $output .= '<img src="' . esc_url($category_image) . '" alt="' . esc_attr($subcategory->name) . '">';
+                $output .= '</div>';
+            }
+            
+            $output .= '<div class="subcategory-content">';
+            $output .= '<h3><a href="' . get_category_link($subcategory->term_id) . '">';
             $output .= esc_html($subcategory->name);
-            $output .= '</a> (' . $subcategory->count . ')';
-            $output .= '</li>';
+            $output .= '</a> (' . $subcategory->count . ')</h3>';
+            
+            // اضافه کردن توضیحات دسته‌بندی
+            if (!empty($subcategory->description)) {
+                $output .= '<p class="subcategory-description">' . wp_kses_post($subcategory->description) . '</p>';
+            }
+            
+            $output .= '</div>'; // پایان subcategory-content
+            $output .= '</div>'; // پایان subcategory-item
         }
     } else {
-        $output .= '<li>هیچ زیرمجموعه‌ای یافت نشد.</li>';
+        $output .= '<p>هیچ زیرمجموعه‌ای یافت نشد.</p>';
     }
     
-    $output .= '</ul>';
+    $output .= '</div>';
 
     return $output;
 }
@@ -46,23 +69,43 @@ function display_subcategories_shortcode($atts) {
 // ثبت شورت‌کد
 add_shortcode('subcategories', 'display_subcategories_shortcode');
 
-// اضافه کردن استایل ساده
+// اضافه کردن استایل
 function subcategories_styles() {
     echo '
     <style>
-        .subcategories-list {
-            list-style-type: none;
-            padding: 0;
+        .subcategories-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 20px 0;
         }
-        .subcategories-list li {
-            margin: 5px 0;
+        .subcategory-item {
+            width: 100%;
+            max-width: 300px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            background: #fff;
         }
-        .subcategories-list a {
+        .subcategory-image img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+        }
+        .subcategory-content h3 {
+            margin: 10px 0;
+            font-size: 1.2em;
+        }
+        .subcategory-content a {
             text-decoration: none;
             color: #0073aa;
         }
-        .subcategories-list a:hover {
+        .subcategory-content a:hover {
             text-decoration: underline;
+        }
+        .subcategory-description {
+            font-size: 0.9em;
+            color: #555;
         }
     </style>';
 }
